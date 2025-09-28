@@ -88,9 +88,13 @@ def menu():
             for i in range(int(No_of_inputs)):
                 name = input("Enter customer name: ")
                 email = (input("Enter email: "))
+                street = input("Please enter your street: ")
+                city = input("Please enter your city: ")
+                zip = input("Please input your zip code: ")
+                country = input("Please input the country you reside in: ")
                 # names.append(name)
                 # emails.append(email)
-                documents.append({"name": name, "email":email})
+                documents.append({"name": name, "email":email,"address":{"street":street, "city":city,"zip":zip,"country":country}})
             create_documents(documents,users)
         
         elif choice == "3":
