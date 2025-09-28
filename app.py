@@ -5,9 +5,10 @@ import pprint
 # -------------------------
 # Database connection
 # -------------------------
-client = MongoClient("mongodb://localhost:27017/")  # adjust if using Atlas
+MONGO_URI = "mongodb+srv://g24h9724_db_user:g24h9724@cluster0.lkmoqjo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+client = MongoClient(MONGO_URI)  # adjust if using Atlas
 db = client["ecommerce_db"]      #  chosen DB name
-collection = db["customers"]    # example collection
+users = db["users"]    # example users
 
 pp = pprint.PrettyPrinter(indent=2)
 
@@ -16,33 +17,33 @@ pp = pprint.PrettyPrinter(indent=2)
 # CRUD Function Templates
 # -------------------------
 
-def create_document(doc, collection):
-    
-        if len(doc) >1:
-            return "Multiple documents created with id's:",(db.collection.insert_many(doc, ordered=False)).insterted_ids
-        else:
-            db.collection.insert_one(doc)
-            return "Document successfully created with id:",doc["_id"]
+def create_document(doc, users):
+    print( "Document successfully created with id:", users.insert_one(doc)["_id"])
+
+def create_documents(doc,users):
+    print( "Multiple documents created with id's:",(db.users.insert_many(doc, ordered=False)).inserted_ids)
 
 
 def read_all_documents(search = None):
     if (search is None):
-        criteria = db.collection.find()
+        criteria = db.users.find()
     else:
-        criteria = db.collection.find(search)
+        criteria = db.users.find(search)
     for cust in criteria:
         print (cust)
      
 
 def update_document(find, replace):
     if(len(find[0]>1)):
-        return db.collection.update_many(filter=find, update= replace)
-    return db.collection.update_one(filter = find, update = replace)
+        print( db.users.update_many(filter=find, update= replace))
+    else:
+        print( db.users.update_one(filter = find, update = replace))
 
 def delete_document(search = None):
     if search is None:
-        return db.collection.delete_many(search)   
-    return db.collection.delete_one(search)
+        print( db.users.delete_many(search))
+    else:
+        print( db.users.delete_one(search))
 
 
 
@@ -70,7 +71,7 @@ def menu():
         if choice == "1":
             name = input("Enter student name: ")
             email = (input("Enter email: "))
-            create_document({"name": name, "email": email})
+            create_document({"name": name, "email": email},users)
 
         elif choice == "2":
             No_of_inputs = input("Enter the number of documents to input: ")
@@ -81,7 +82,7 @@ def menu():
                 email = (input("Enter email: "))
                 names[i] = name
                 emails[i] =email
-            create_document({"name": names, "email":emails})
+            create_documents({"name": names, "email":emails},users)
         
         elif choice == "3":
             read_all_documents()
