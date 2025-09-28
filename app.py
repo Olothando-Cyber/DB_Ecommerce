@@ -18,10 +18,10 @@ pp = pprint.PrettyPrinter(indent=2)
 # -------------------------
 
 def create_document(doc, users):
-    print( "Document successfully created with id:", users.insert_one(doc)["_id"])
+    print( "Document successfully created with id:", users.insert_one(doc).inserted_id)
 
 def create_documents(doc,users):
-    print( "Multiple documents created with id's:",(db.users.insert_many(doc, ordered=False)).inserted_ids)
+    print( "Multiple documents created with id's:",(users.insert_many(doc, ordered=False)).inserted_ids)
 
 
 def read_all_documents(search = None):
@@ -69,26 +69,35 @@ def menu():
         choice = input("Enter choice: ")
 
         if choice == "1":
-            name = input("Enter student name: ")
+            name = input("Enter customer name: ")
             email = (input("Enter email: "))
-            create_document({"name": name, "email": email},users)
+            # print("Please enter your address: ")
+            street = input("Please enter your street: ")
+            city = input("Please enter your city: ")
+            zip = input("Please input your zip code: ")
+            country = input("Please input the country you reside in: ")
+
+
+            create_document({"name": name, "email": email, "address":{"street":street, "city":city,"zip":zip,"country":country}},users)
 
         elif choice == "2":
             No_of_inputs = input("Enter the number of documents to input: ")
-            names = []
-            emails =[]
-            for i in No_of_inputs:
-                name = input("Enter student name: ")
+            # names = []
+            # emails =[]
+            documents = []
+            for i in range(int(No_of_inputs)):
+                name = input("Enter customer name: ")
                 email = (input("Enter email: "))
-                names[i] = name
-                emails[i] =email
-            create_documents({"name": names, "email":emails},users)
+                # names.append(name)
+                # emails.append(email)
+                documents.append({"name": name, "email":email})
+            create_documents(documents,users)
         
         elif choice == "3":
             read_all_documents()
         
         elif choice == "4":
-            name = input("Enter student name: ")
+            name = input("Enter customer name: ")
             email = (input("Enter email: "))
             read_all_documents({"name": name, "email":email})
         
