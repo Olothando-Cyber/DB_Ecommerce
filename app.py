@@ -6,11 +6,14 @@ import pprint
 # -------------------------
 # Database connection
 # -------------------------
+
+# Connection string for mongoDB 
 MONGO_URI = "mongodb+srv://g24h9724_db_user:g24h9724@cluster0.lkmoqjo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(MONGO_URI)  # adjust if using Atlas
 db = client["ecommerce_db"]      #  chosen DB name
 users = db["users"]    # example users
 
+# Pretty Printer for formatted output of documents
 pp = pprint.PrettyPrinter(indent=2)
 
 
@@ -18,29 +21,35 @@ pp = pprint.PrettyPrinter(indent=2)
 # CRUD Function Templates
 # -------------------------
 
+# Create: insert a single document into collection
 def create_document(doc, users, attempts = 4):
+    # Stop trying after max attempts
     if attempts ==0:
         print("Failed to create document.")
         return
     
     try:
+        # Insert one document and print insterted _id
         print( "Document successfully created with id:", users.insert_one(doc).inserted_id)
         return
     except(ServerSelectionTimeoutError, ExecutionTimeout) as e:
+        # Retry if server times out
         print("Failed to create, \nTrying again...")
         create_document(doc,users, attempts -1)
     except Exception as e:
+        # Catch aall other execeptions
         print("Failed to create document.",e)
 
 
         
 
-
+# Create: insert Multiple documents
 def create_documents(doc,users, attempts = 4):
     if attempts ==0:
         print("Failed to create documents")
         return
     try:
+        # Insert many documents and print the insterted IDs
         print( "Multiple documents created with id's:",(users.insert_many(doc, ordered=False)).inserted_ids)
         return
     except(ServerSelectionTimeoutError, ExecutionTimeout) as e:
@@ -49,19 +58,25 @@ def create_documents(doc,users, attempts = 4):
     except Exception as e:
         print("Failed to create document.")
 
+# Read:Fetch All documents or only those matvhing a search
 def read_all_documents(search = None):
     if (search is None):
+        # No filter the retrieve all
         criteria = db.users.find()
         
     else:
+        # Apply Filter
         criteria = db.users.find(search)
+
+    # If no documents
     if len(criteria) == 0:
         print("No documents found")
         return
+    # Print each document found
     for cust in criteria:
         print (cust)
      
-
+# UPDATE: Update a single document
 def update_document(find, replace, attempts = 4):
     if attempts == 0:
         print("Unsuccessful update of documents")
@@ -78,11 +93,12 @@ def update_document(find, replace, attempts = 4):
             print("Failed to update document.",e)
     
     else:
+        # If No matvh is found, it then inserts a new document
         print("No document found for such, \ncreating new document")
         create_document(replace,users)
         
 
-
+# Uodate multiple documents
 def update_documents(find, replace, attempts = 4):
     if attempts == 0:
         print("Unsuccessful update of documents")
@@ -90,6 +106,7 @@ def update_documents(find, replace, attempts = 4):
     
     if db.users.find(find):      
         try:
+            # Update all matching documents
             print( db.users.update_many(filter = find, update = replace))
 
         except(ServerSelectionTimeoutError, ExecutionTimeout) as e:
@@ -105,7 +122,7 @@ def update_documents(find, replace, attempts = 4):
 
 # d5
 # db.users.update_many(filter=find, update= replace))
-
+# Delete: remove documents(single or all)
 def delete_document(search = None):
     try:
         if search is None:
@@ -185,11 +202,11 @@ def menu():
             replace = {"$set":{"name": input("Enter the name replacement name: "), "email":input("Enter email replacement: ")}} 
             update_document(find, replace)
         
-        elif choice == "6":
+        elif choice == "7":
             find = {"name": input("Enter the name of the documents you're searching for: "), "email":input("Enter email of the one you're searching for: ")}
             delete_document(find)
 
-        elif choice == "7":
+        elif choice == "8":
             delete_document({})
 
         elif choice == "9":
