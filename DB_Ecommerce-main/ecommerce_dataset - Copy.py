@@ -9,7 +9,7 @@ from bson.objectid import ObjectId
 # Students, insert your MongoDB connection URI here
 # For example: "mongodb+srv://<username>:<password>@<cluster-url>/<dbname>?retryWrites=true&w=majority"
 
-MONGO_URI = "mongodb+srv://g24n9666_db_user:M4rk4ev3r@cluster0.lkmoqjo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+MONGO_URI = "mongodb+srv://@cluster0.lkmoqjo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 DB_NAME = "ecommerce_db"
 
