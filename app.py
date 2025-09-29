@@ -1,4 +1,5 @@
 from pymongo import MongoClient
+from pymongo.errors import ServerSelectionTimeoutError, ExecutionTimeout
 from bson import ObjectId
 import pprint
 
@@ -17,34 +18,102 @@ pp = pprint.PrettyPrinter(indent=2)
 # CRUD Function Templates
 # -------------------------
 
-def create_document(doc, users):
-    print( "Document successfully created with id:", users.insert_one(doc).inserted_id)
+def create_document(doc, users, attempts = 4):
+    if attempts ==0:
+        print("Failed to create document.")
+        return
+    
+    try:
+        print( "Document successfully created with id:", users.insert_one(doc).inserted_id)
+        return
+    except(ServerSelectionTimeoutError, ExecutionTimeout) as e:
+        print("Failed to create, \nTrying again...")
+        create_document(doc,users, attempts -1)
+    except Exception as e:
+        print("Failed to create document.",e)
 
-def create_documents(doc,users):
-    print( "Multiple documents created with id's:",(users.insert_many(doc, ordered=False)).inserted_ids)
 
+        
+
+
+def create_documents(doc,users, attempts = 4):
+    if attempts ==0:
+        print("Failed to create documents")
+        return
+    try:
+        print( "Multiple documents created with id's:",(users.insert_many(doc, ordered=False)).inserted_ids)
+        return
+    except(ServerSelectionTimeoutError, ExecutionTimeout) as e:
+        print("Failed to create, \nTrying again...")
+        create_document(doc,users, attempts -1)
+    except Exception as e:
+        print("Failed to create document.")
 
 def read_all_documents(search = None):
     if (search is None):
         criteria = db.users.find()
+        
     else:
         criteria = db.users.find(search)
+    if len(criteria) == 0:
+        print("No documents found")
+        return
     for cust in criteria:
         print (cust)
      
 
-def update_document(find, replace):
-    if(len(find[0]>1)):
-        print( db.users.update_many(filter=find, update= replace))
+def update_document(find, replace, attempts = 4):
+    if attempts == 0:
+        print("Unsuccessful update of documents")
+        return
+    
+    if db.users.find(find):      
+        try:
+            print( db.users.update_one(filter = find, update = replace))
+
+        except(ServerSelectionTimeoutError, ExecutionTimeout) as e:
+            print("Failed to update, \nTrying again...")
+            create_document(find,replace, attempts -1)
+        except Exception as e:
+            print("Failed to update document.",e)
+    
     else:
-        print( db.users.update_one(filter = find, update = replace))
+        print("No document found for such, \ncreating new document")
+        create_document(replace,users)
+        
+
+
+def update_documents(find, replace, attempts = 4):
+    if attempts == 0:
+        print("Unsuccessful update of documents")
+        return
+    
+    if db.users.find(find):      
+        try:
+            print( db.users.update_many(filter = find, update = replace))
+
+        except(ServerSelectionTimeoutError, ExecutionTimeout) as e:
+            print("Failed to update, \nTrying again...")
+            create_document(find,replace, attempts -1)
+        except Exception as e:
+            print("Failed to update document.",e)
+    
+    else:
+        print("No document found for such, \ncreating new document")
+        create_document(replace,users)
+   
+
+# d5
+# db.users.update_many(filter=find, update= replace))
 
 def delete_document(search = None):
-    if search is None:
-        print( db.users.delete_many(search))
-    else:
-        print( db.users.delete_one(search))
-
+    try:
+        if search is None:
+            print( db.users.delete_many({}))
+        else:
+            print( db.users.delete_one(search))
+    except Exception as e:
+        print("Unsuccessful execution of command",e)
 
 
 
@@ -59,11 +128,12 @@ def menu():
         print("\n--- MongoDB Project Menu ---")
         print("1. Create Document")
         print("2. create multiple documents")
-        print("3. Read All Documents")
-        print("4. Read all documents with...")
-        print("5 Update all documents ")
-        print("6. Delete all ducuments with...")
-        print("7. Delete ALL documents")
+        print("3. Read All documents")
+        print("4. Read documents with...")
+        print("5  Update all documents with... ")
+        print("6  Update document with...")
+        print("7. Delete ducuments with...")
+        print("8. Delete ALL documents")
         print("9. Exit")
 
         choice = input("Enter choice: ")
@@ -107,7 +177,12 @@ def menu():
         
         elif choice =="5":
             find = {"name": input("Enter the name of the documents you're searching for: "), "email":input("Enter email of the one you're searching for: ")}
-            replace = {"$set":{"name": input("Enter the name you'll be replacing: "), "email":input("Enter email of the one you'll be replacing: ")}}
+            replace = {"$set":{"name": input("Enter the name replacement name: "), "email":input("Enter email replacement: ")}}
+            update_documents(find, replace)
+        
+        elif choice =="6":
+            find = {"name": input("Enter the name of the document you're searching for: "), "email":input("Enter email of the one you're searching for: ")}
+            replace = {"$set":{"name": input("Enter the name replacement name: "), "email":input("Enter email replacement: ")}} 
             update_document(find, replace)
         
         elif choice == "6":
@@ -115,7 +190,7 @@ def menu():
             delete_document(find)
 
         elif choice == "7":
-            delete_document()
+            delete_document({})
 
         elif choice == "9":
             print("Exiting...")
