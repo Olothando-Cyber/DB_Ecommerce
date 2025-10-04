@@ -8,7 +8,7 @@ import pprint
 # -------------------------
 
 # Connection string for mongoDB 
-MONGO_URI = "mongodb+srv://g24m5008_db_user:Lucas@cluster0.lkmoqjo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+MONGO_URI = "mongodb+srv://<studentnumber>_db_user:<password>@cluster0.lkmoqjo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(MONGO_URI)  # adjust if using Atlas
 db = client["ecommerce_db"]      #  chosen DB name
 users = db["users"]    # example users
