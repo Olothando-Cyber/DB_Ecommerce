@@ -8,13 +8,106 @@ import pprint
 # -------------------------
 
 # Connection string for mongoDB 
-MONGO_URI = "mongodb+srv://g24h9724_db_user:g24h9724@cluster0.lkmoqjo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+MONGO_URI = "mongodb+srv://g24m5008_db_user:Lucas@cluster0.lkmoqjo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(MONGO_URI)  # adjust if using Atlas
 db = client["ecommerce_db"]      #  chosen DB name
 users = db["users"]    # example users
 
+
 # Pretty Printer for formatted output of documents
 pp = pprint.PrettyPrinter(indent=2)
+
+# -------------------------
+# ADVANCED QUERYING FUNCTIONS
+# -------------------------
+
+products = db['products']
+
+def logical_query_and():
+    """
+    Find products using the $and operator
+    E.g: Find products that are both in "Electronics" category and has a price less than $200 
+    """
+    try:
+        qry = {"$and": [{"category": "Electronics"}, {"price": {"$lt": 200}}]}
+        results = products.find(qry) 
+        print("\n\t\tElectronics under $200:")
+        for product in results:
+            print(f"Product: {product.get('name','N/A')}, Price: ${product.get('price','N/A')}")
+    except Exception as e:
+        print(f"Error in $and query: {e}")
+
+def logical_query_or():
+    """
+    Find products using $or operator
+    E.g:Find products in the "Beauty" or "Clothing" categories
+    """
+    try:
+        qry = {"$or":[{"category": "Beauty"}, {"category": "Clothing"}]}
+        results = products.find(qry)
+        print("\n\t\tBeauty OR Clothing products:")
+        for product in results:
+            print(f"Product: {product.get('name', 'N/A')}, Category:{product.get('category','N/A')}")
+    except Exception as e:
+        print(f"Error in $or query: {e}")
+def logical_query_not():
+    """
+    Find products that are not in "Electronics" and "Toys"
+    """
+    try:
+        qry =  {"category": {"$not": {"$in": ["Electronics", "Toys"]}}}
+        results = products.find(qry)
+        print("\n\t\tProducts that are not Electronics nor Toys:")
+        for product in results:
+            print(f"Product:{product.get('name','N/A')},Category: {product.get('category','N/A')}")
+    except Exception as e:
+        print(f"Error in $not query:{e}")
+
+def comp_and_elem_queries():
+    """
+    Find products using comparison operators $gt and $lt
+    E.g: Find products in Electronics between $200 and $1000
+    """
+    try:
+        qry = {"category":"Electronics","price":{"$gt":200,"$lt":1000}}
+        results = products.find(qry)
+        print("\n\t\tElectronics priced between $200 and $1000:")
+        cnt = 0
+        for product in results:
+            print(f"Product: {product.get('name', 'N/A')}, Price: {product.get('price','N/A')}")
+            cnt+=1
+        if cnt == 0:
+            print("No products found in the Electronics category that are prices between $200 and $1000 ")
+    except Exception as e:
+        print(f"Error in comparison and Element query ($gt and $lt): {e}")
+
+def in_query():
+    """
+    Find products using $in operator
+    E.g: Find products in specific categories
+    """
+    try:
+        qry = {"category": {"$in": ["Electronics", "Clothing", "Books"]}}
+        results = products.find(qry)
+        print("\n\t\tProducts in Electronics, Clothing, or Books:")
+        for product in results:
+            print(f"Product: {product.get('name', 'N/A')}, Category: {product.get('category', 'N/A')}")
+    except Exception as e:
+        print(f"Error in IN query: {e}")
+
+def exists_query():
+    """
+    Find products using $exists operator
+    E.g Find products that have a 'variants' field
+    """
+    try:
+        qry = {"variants": {"$exists": True}}
+        results = products.find(qry)
+        print("\n\t\tProducts with the variants field:")
+        for product in results:
+            print(f"Product:{product.get('name','N/A')}, Variants: {product.get('variants')}")
+    except Exception as e:
+        print(f"Error in Exists query: {e}")
 
 
 # -------------------------
@@ -144,14 +237,20 @@ def menu():
     while True:
         print("\n--- MongoDB Project Menu ---")
         print("1. Create Document")
-        print("2. create multiple documents")
+        print("2. Create multiple documents")
         print("3. Read All documents")
         print("4. Read documents with...")
         print("5  Update all documents with... ")
         print("6  Update document with...")
         print("7. Delete ducuments with...")
         print("8. Delete ALL documents")
-        print("9. Exit")
+        print("9. AND Query: Electronics under $200")
+        print("10. OR Query: Beauty OR Clothing")
+        print("11. NOT Query: Not Electronics nor Toys")
+        print("12. Comparison and element Query: Electronics priced between $200 and $1000")
+        print("13. Products with variants field")
+        print("14. In Query: Electronics/Clothing/Books")
+        print("15. Exit")
 
         choice = input("Enter choice: ")
 
@@ -210,6 +309,24 @@ def menu():
             delete_document({})
 
         elif choice == "9":
+            logical_query_and()
+
+        elif choice == "10":
+            logical_query_or()
+
+        elif choice == "11":
+            logical_query_not()
+
+        elif choice == "12":
+            comp_and_elem_queries()
+
+        elif choice == "13":
+            exists_query()
+
+        elif choice == "14":
+            in_query()
+
+        elif choice == "15":
             print("Exiting...")
             quit()
 
