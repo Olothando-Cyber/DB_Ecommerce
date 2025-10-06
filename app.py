@@ -108,6 +108,12 @@ def exists_query():
             print(f"Product:{product.get('name','N/A')}, Variants: {product.get('variants')}")
     except Exception as e:
         print(f"Error in Exists query: {e}")
+def calcProd():
+    try:
+        db.products.aggregate([{("$group":{"_id":"$products","Avg_rating":{"$avg":"$rating} }}}, {"$project":"_id"}])
+                                                                           
+    except Exception as e:
+        print(f"Error in query: {e}")
 
 
 # -------------------------
@@ -132,6 +138,7 @@ def create_document(doc, users, attempts = 4):
     except Exception as e:
         # Catch aall other execeptions
         print("Failed to create document.",e)
+        
 
 
         
