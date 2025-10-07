@@ -1,14 +1,16 @@
+import random
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError, ExecutionTimeout
 from bson import ObjectId
 import pprint
+from datetime import datetime
 
 # -------------------------
 # Database connection
 # -------------------------
 
 # Connection string for mongoDB 
-MONGO_URI = "mongodb+srv://<studentnumber>_db_user:<password>@cluster0.lkmoqjo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+MONGO_URI = "mongodb+srv://g24h9724_db_user:g24h9724@cluster0.lkmoqjo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(MONGO_URI)  # adjust if using Atlas
 db = client["ecommerce_db"]      #  chosen DB name
 users = db["users"]    # example users
@@ -22,6 +24,7 @@ pp = pprint.PrettyPrinter(indent=2)
 # -------------------------
 
 products = db['products']
+orders= db['orders']
 
 def logical_query_and():
     """
@@ -108,12 +111,98 @@ def exists_query():
             print(f"Product:{product.get('name','N/A')}, Variants: {product.get('variants')}")
     except Exception as e:
         print(f"Error in Exists query: {e}")
-def calcProd():
+        
+        
+# -------------------------
+# Array Functiuons
+# -------------------------
+def review_product(doc, product_name, products):
+    """
+    Add a review document to the specified product.
+    """
     try:
-        db.products.aggregate([{("$group":{"_id":"$products","Avg_rating":{"$avg":"$rating} }}}, {"$project":"_id"}])
-                                                                           
+       
+        prod = products.find_one({"name": product_name})
+        
+        
+        if prod is None:
+            print("Product not found.")
+            return
+        
+      
+        products.update_one(
+            {"_id": prod["_id"]},
+            {"$push": {"reviews": doc}}
+        )
+        print(f"Review added successfully for product: {product_name}")
+    
     except Exception as e:
-        print(f"Error in query: {e}")
+        print(f"Error adding review: {e}")
+        
+def get_orders_size(size,orders ):
+    if size<0 or type(size)!=int:
+        return "invalid input"
+    try:
+        results= orders.find({"items":{"$size":size}})
+        count =0
+        for order in results:
+            pprint.pprint(order["items"])
+            count +=1
+        if count ==0:
+            print("No orders found matching that size")
+    except Exception as e:
+        print(f"Error while retrieving orders by size: {e}")
+
+def get_filtered_comments(rating):
+    if not isinstance(rating, (int, float)) or rating < 0:
+        return "invalid input"
+
+    try:
+        # Correct use of $all with $elemMatch and $gt
+        results = products.find({
+            "reviews": {"$all": [{"$elemMatch": {"rating": {"$gt": rating}}}]}})
+
+        count = 0
+        for product in results:
+            pprint.pprint(product.get("reviews", []))
+            count += 1
+
+        if count == 0:
+            print("No reviews found greater than that rating.")
+    except Exception as e:
+        print(f"Error while retrieving reviews: {e}")
+def remove_review(product_name, rating, products):
+    """
+    Remove a review from the specified product based on rating.
+    """
+    try:
+        # Step 1: Find the product
+        prod = products.find_one({"name": product_name})
+        
+        # Step 2: Handle if not found
+        if prod is None:
+            print("Product not found.")
+            return
+        
+        # Step 3: Pull (remove) the review matching a specific rating
+        products.update_one(
+            {"_id": prod["_id"]},
+            {"$pull": {"reviews": {"rating": rating}}}
+        )
+        print(f"Review with rating {rating} removed successfully for product: {product_name}")
+    
+    except Exception as e:
+        print(f"Error removing review: {e}")
+
+    
+# -------------------------
+# Aggregation
+# -------------------------
+    
+    
+        
+
+     
 
 
 # -------------------------
@@ -138,7 +227,6 @@ def create_document(doc, users, attempts = 4):
     except Exception as e:
         # Catch aall other execeptions
         print("Failed to create document.",e)
-        
 
 
         
@@ -257,7 +345,11 @@ def menu():
         print("12. Comparison and element Query: Electronics priced between $200 and $1000")
         print("13. Products with variants field")
         print("14. In Query: Electronics/Clothing/Books")
-        print("15. Exit")
+        print("15. Review a product you have used")
+        print("16. Get orders that are a certain size")
+        print("17. Filter reviews")
+        
+        print("18. Exit")
 
         choice = input("Enter choice: ")
 
@@ -332,11 +424,31 @@ def menu():
 
         elif choice == "14":
             in_query()
-
-        elif choice == "15":
+        
+        elif choice =="15":
+            product = input("Enter price or name of product: ")
+            rating = input("Please enter the rating: ")
+            comment = input("Add a comment, please be respectful at all times: ")
+            date = datetime.now()
+            upvotes = random.randrange(0,15)
+            review_product({"rating":int(rating),"comment":comment,"date":date,"upvotes":upvotes},product,products)
+            
+        elif choice=="16":
+            size = input("Please enter the size of orders: ")
+            get_orders_size(int(size),orders)
+        elif choice=="17":
+            rating = input("Please enter the ratings you want to check(ratings greater than): ")
+            get_filtered_comments(int(rating))
+        elif choice=="18":
+            product = input("Enter the product name: ")
+            rating = int(input("Enter the rating of the review to remove: "))
+            remove_review(product, rating, products)
+            
+        elif choice == "19":
             print("Exiting...")
             quit()
-
+        
+        
         else:
             print("Invalid choice, try again.")
 
