@@ -10,7 +10,7 @@ from datetime import datetime
 # -------------------------
 
 # Connection string for mongoDB 
-MONGO_URI = "mongodb+srv://g24h9724_db_user:g24h9724@cluster0.lkmoqjo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+MONGO_URI = "mongodb+srv://<studentNumber>_db_user:<password>@cluster0.lkmoqjo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(MONGO_URI)  # adjust if using Atlas
 db = client["ecommerce_db"]      #  chosen DB name
 users = db["users"]    # example users
@@ -181,7 +181,7 @@ def remove_review(product_name, rating, products):
         
         # Step 2: Handle if not found
         if prod is None:
-            print("Product not found.")
+            pprint("Product not found.")
             return
         
         # Step 3: Pull (remove) the review matching a specific rating
@@ -198,10 +198,41 @@ def remove_review(product_name, rating, products):
 # -------------------------
 # Aggregation
 # -------------------------
-    
-    
-        
-
+def type_of_products(category,products=products):
+    if type(category) != str:
+        print("Invalid input")
+        return
+    try:
+        cursor= products.aggregate([
+            {"$match":{"category": category}},
+            {"$project":{"name":1,"price":1,"tags":1,"features":1}}
+        ])
+        for doc in cursor:
+            print(doc)
+        return
+    except(ServerSelectionTimeoutError, ExecutionTimeout) as e:
+        # Retry if server times out
+        print("Failed to create, \nTrying again...")
+    except Exception as e:
+        # Catch aall other execeptions
+        print("Failed to create document.",e)
+def all_proucts_cost():
+    try:
+        cursor = products.aggregate([
+            {"$group": {
+                "_id":"$category",
+                "totalOfCategory": {"$sum":"$price"}
+            }}
+        ])
+        for doc in cursor:
+            print(doc)
+        return
+    except(ServerSelectionTimeoutError, ExecutionTimeout) as e:
+        # Retry if server times out
+        print("Failed to create, \nTrying again...")
+    except Exception as e:
+        # Catch aall other execeptions
+        print("Failed to create document.",e)
      
 
 
@@ -348,8 +379,11 @@ def menu():
         print("15. Review a product you have used")
         print("16. Get orders that are a certain size")
         print("17. Filter reviews")
+        print("18. Remove review")
+        print("19. Get All Products of a Certain Category")
+        print("20. Get Total cost of all products by category")
         
-        print("18. Exit")
+        print("21. Exit")
 
         choice = input("Enter choice: ")
 
@@ -443,8 +477,13 @@ def menu():
             product = input("Enter the product name: ")
             rating = int(input("Enter the rating of the review to remove: "))
             remove_review(product, rating, products)
-            
         elif choice == "19":
+            product = input("Please enter the category of the product you are looking for: ")
+            type_of_products(product)
+        
+        elif choice == "20":
+            all_proucts_cost()
+        elif choice == "21":
             print("Exiting...")
             quit()
         
