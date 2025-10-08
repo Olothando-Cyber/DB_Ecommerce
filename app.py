@@ -10,7 +10,7 @@ from datetime import datetime
 # -------------------------
 
 # Connection string for mongoDB 
-MONGO_URI = "mongodb+srv://<studentNumber>_db_user:<password>@cluster0.lkmoqjo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+MONGO_URI = "mongodb+srv://<>_db_user:<>@cluster0.lkmoqjo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(MONGO_URI)  # adjust if using Atlas
 db = client["ecommerce_db"]      #  chosen DB name
 users = db["users"]    # example users
@@ -234,6 +234,94 @@ def all_proucts_cost():
         # Catch aall other execeptions
         print("Failed to create document.",e)
      
+# ---------------------------------
+# Aggreation Pipelines with lookup
+# ---------------------------------
+
+
+def pipeline1():
+    """
+    Aggregation pipeline to join orders with users to see who placed each order using "lookup" and "out"
+    """
+    try:
+        result = db.orders.aggregate([
+            {"$lookup": {
+                "from": "users",
+                "localField": "customer_id",
+                "foreignField": "_id",
+                "as": "customer_info"
+            }},
+            {"$project": {
+                "order_id": "$_id",
+                "order_date": 1,
+                "customer_name": {"$arrayElemAt": ["$customer_info.name", 0]},
+                "customer_email": {"$arrayElemAt": ["$customer_info.email", 0]},
+                "total_items": {"$size": "$items"}
+            }},
+            {"$out": "simple_orders_report"}
+        ])
+        print("Pipeline successful")
+        result = list(result)
+
+        for order in result:
+            print(f"Order {order['order_id']}: {order['customer_name']} - {order['total_items']} items")
+
+    except Exception as e:
+        print(f"Pipeline failed: {e}")
+
+def pipeline2():
+    """
+    Aggregation pipeline to join products with their reviews and calculate average rating.
+    Uses $lookup and $merge to update results.
+    """
+    try:
+        result = db.products.aggregate([
+            {
+                "$addFields": {
+                    "average_rating": {
+                        "$cond": {
+                            "if": { "$isArray": "$reviews" },
+                            "then": { "$avg": "$reviews.rating" },
+                            "else": "No reviews"
+                        }
+                    },
+                    "review_count": {
+                        "$cond": {
+                            "if": { "$isArray": "$reviews" },
+                            "then": { "$size": "$reviews" },
+                            "else": 0
+                        }
+                    }
+                }
+            },
+            {
+                "$project": {
+                    "product_name": "$name",
+                    "category": 1,
+                    "price": 1,
+                    "average_rating": 1,
+                    "review_count": 1  
+                }
+            },
+            {
+                "$sort": { "average_rating": -1 }
+            },
+            {
+                "$merge": {
+                    "into": "product_ratings",
+                    "on": "_id",
+                    "whenMatched": "replace",
+                    "whenNotMatched": "insert"}}])
+        print("Pipeline2 is created")
+        for product in db.product_ratings.find():
+            rating = product.get("average_rating", "No reviews")
+            if isinstance(rating, (int, float)):
+                print(f"{product['product_name']} : {rating:.1f} stars ({product['review_count']} reviews)")
+            else:
+                print(f"{product['product_name']}: No reviews yet")
+
+    except Exception as e:
+        print(f"Pipeline2 has failed: {e}")
 
 
 # -------------------------
@@ -382,8 +470,9 @@ def menu():
         print("18. Remove review")
         print("19. Get All Products of a Certain Category")
         print("20. Get Total cost of all products by category")
-        
-        print("21. Exit")
+        print("21. Display each users order.")
+        print("22. Displays reviews and average rating ")
+        print("23. Exit")
 
         choice = input("Enter choice: ")
 
@@ -483,7 +572,13 @@ def menu():
         
         elif choice == "20":
             all_proucts_cost()
+        
         elif choice == "21":
+            pipeline1()
+        
+        elif choice == "22":
+            pipeline2()
+        elif choice == "23":
             print("Exiting...")
             quit()
         
