@@ -10,7 +10,7 @@ from datetime import datetime
 # -------------------------
 
 # Connection string for mongoDB 
-MONGO_URI = "mongodb+srv://<>_db_user:<>@cluster0.lkmoqjo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+MONGO_URI = "mongodb+srv://<Student_number>_db_user:<pasword_for_user>@cluster0.lkmoqjo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(MONGO_URI)  # adjust if using Atlas
 db = client["ecommerce_db"]      #  chosen DB name
 users = db["users"]    # example users
@@ -337,14 +337,14 @@ def create_document(doc, users, attempts = 4):
     
     try:
         # Insert one document and print insterted _id
-        print( "Document successfully created with id:", users.insert_one(doc).inserted_id)
+        print( "Document successfully created with id:", (users.insert_one(doc)).inserted_id)
         return
     except(ServerSelectionTimeoutError, ExecutionTimeout) as e:
         # Retry if server times out
         print("Failed to create, \nTrying again...")
         create_document(doc,users, attempts -1)
     except Exception as e:
-        # Catch aall other execeptions
+        # Catch all other execeptions
         print("Failed to create document.",e)
 
 
@@ -365,7 +365,7 @@ def create_documents(doc,users, attempts = 4):
     except Exception as e:
         print("Failed to create document.")
 
-# Read:Fetch All documents or only those matvhing a search
+# Read:Fetch All documents or only those matching a search
 def read_all_documents(search = None):
     if (search is None):
         # No filter the retrieve all
@@ -589,4 +589,5 @@ def menu():
 
 if __name__ == "__main__":
     menu()
+
 
